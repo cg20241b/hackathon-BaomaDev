@@ -23,25 +23,48 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
     // Complementary color (purple)
     const complementaryColor = new THREE.Color(0x320083);
 
-    // Create text material for 'e' with lime green color
+    // Ambient intensity
+    const ambientIntensity = 0.224;
+
+    // Create text material for 'e' with custom shading model
     const textMaterialE = new THREE.ShaderMaterial({
         vertexShader: `
             // Vertex Shader
-            varying vec3 vUv; 
+            varying vec3 vNormal;
+            varying vec3 vPosition;
             void main() {
-                vUv = position; 
+                vNormal = normalize(normalMatrix * normal);
+                vPosition = vec3(modelViewMatrix * vec4(position, 1.0));
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }
         `,
         fragmentShader: `
             // Fragment Shader
             uniform vec3 color;
+            uniform vec3 lightPosition;
+            uniform float ambientIntensity;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
             void main() {
-                gl_FragColor = vec4(color, 1.0);
+                vec3 ambient = ambientIntensity * color;
+
+                vec3 lightDir = normalize(lightPosition - vPosition);
+                float diff = max(dot(vNormal, lightDir), 0.0);
+                vec3 diffuse = diff * color;
+
+                vec3 viewDir = normalize(-vPosition);
+                vec3 reflectDir = reflect(-lightDir, vNormal);
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+                vec3 specular = vec3(0.5) * spec;
+
+                vec3 result = ambient + diffuse + specular;
+                gl_FragColor = vec4(result, 1.0);
             }
         `,
         uniforms: {
-            color: { value: limeGreen }
+            color: { value: limeGreen },
+            lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+            ambientIntensity: { value: ambientIntensity }
         }
     });
 
@@ -61,25 +84,45 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
     textMeshE.position.x = -2; // Position on the left side
     scene.add(textMeshE);
 
-    // Create text material for '4' with complementary color
+    // Create text material for '4' with custom shading model
     const textMaterial4 = new THREE.ShaderMaterial({
         vertexShader: `
             // Vertex Shader
-            varying vec3 vUv; 
+            varying vec3 vNormal;
+            varying vec3 vPosition;
             void main() {
-                vUv = position; 
+                vNormal = normalize(normalMatrix * normal);
+                vPosition = vec3(modelViewMatrix * vec4(position, 1.0));
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
             }
         `,
         fragmentShader: `
             // Fragment Shader
             uniform vec3 color;
+            uniform vec3 lightPosition;
+            uniform float ambientIntensity;
+            varying vec3 vNormal;
+            varying vec3 vPosition;
             void main() {
-                gl_FragColor = vec4(color, 1.0);
+                vec3 ambient = ambientIntensity * color;
+
+                vec3 lightDir = normalize(lightPosition - vPosition);
+                float diff = max(dot(vNormal, lightDir), 0.0);
+                vec3 diffuse = diff * color;
+
+                vec3 viewDir = normalize(-vPosition);
+                vec3 halfDir = normalize(lightDir + viewDir);
+                float spec = pow(max(dot(vNormal, halfDir), 0.0), 64.0);
+                vec3 specular = color * spec;
+
+                vec3 result = ambient + diffuse + specular;
+                gl_FragColor = vec4(result, 1.0);
             }
         `,
         uniforms: {
-            color: { value: complementaryColor }
+            color: { value: complementaryColor },
+            lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+            ambientIntensity: { value: ambientIntensity }
         }
     });
 
@@ -114,9 +157,9 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
             uniform float time;
             varying vec3 vNormal;
             void main() {
-                float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-                vec3 glow = vec3(1.5, 1.5, 1.5) * intensity;
-                gl_FragColor = vec4(glow, 0.9 + 0.1 * sin(time));
+                float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 4.0); // Increase the power for more intensity
+                vec3 glow = vec3(1.5, 1.5, 1.5) * intensity; // Increase the glow color brightness
+                gl_FragColor = vec4(glow, 0.7 + 0.3 * sin(time)); // Adjust alpha for more visibility
             }
         `,
         uniforms: {
@@ -133,9 +176,10 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
     function animate() {
         requestAnimationFrame(animate);
         glowMaterial.uniforms.time.value += 0.05;
-        // Rotate the cube (Sebagai bukti bahwa itu cube)
         // glowCube.rotation.x += 0.01;
         // glowCube.rotation.y += 0.01;
+        textMaterialE.uniforms.lightPosition.value = glowCube.position;
+        textMaterial4.uniforms.lightPosition.value = glowCube.position;
         renderer.render(scene, camera);
     }
     animate();
