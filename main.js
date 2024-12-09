@@ -18,7 +18,13 @@ document.body.appendChild(renderer.domElement);
 // Load a font and create text meshes
 const loader = new FontLoader();
 loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
-    const textMaterial = new THREE.ShaderMaterial({
+    // Lime green color
+    const limeGreen = new THREE.Color(0xcdff7c);
+    // Complementary color (purple)
+    const complementaryColor = new THREE.Color(0x320083);
+
+    // Create text material for 'e' with lime green color
+    const textMaterialE = new THREE.ShaderMaterial({
         vertexShader: `
             // Vertex Shader
             varying vec3 vUv; 
@@ -29,11 +35,14 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
         `,
         fragmentShader: `
             // Fragment Shader
-            varying vec3 vUv;
+            uniform vec3 color;
             void main() {
-                gl_FragColor = vec4(vUv * 0.5 + 0.5, 1.0);
+                gl_FragColor = vec4(color, 1.0);
             }
-        `
+        `,
+        uniforms: {
+            color: { value: limeGreen }
+        }
     });
 
     // Create text geometry for 'e'
@@ -48,9 +57,31 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
         bevelOffset: 0,
         bevelSegments: 5
     });
-    const textMeshE = new THREE.Mesh(textGeometryE, textMaterial);
+    const textMeshE = new THREE.Mesh(textGeometryE, textMaterialE);
     textMeshE.position.x = -2; // Position on the left side
     scene.add(textMeshE);
+
+    // Create text material for '4' with complementary color
+    const textMaterial4 = new THREE.ShaderMaterial({
+        vertexShader: `
+            // Vertex Shader
+            varying vec3 vUv; 
+            void main() {
+                vUv = position; 
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            // Fragment Shader
+            uniform vec3 color;
+            void main() {
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `,
+        uniforms: {
+            color: { value: complementaryColor }
+        }
+    });
 
     // Create text geometry for '4'
     const textGeometry4 = new TextGeometry('4', {
@@ -64,7 +95,7 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
         bevelOffset: 0,
         bevelSegments: 5
     });
-    const textMesh4 = new THREE.Mesh(textGeometry4, textMaterial);
+    const textMesh4 = new THREE.Mesh(textGeometry4, textMaterial4);
     textMesh4.position.x = 2; // Position on the right side
     scene.add(textMesh4);
 
