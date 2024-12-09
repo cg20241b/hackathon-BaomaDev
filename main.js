@@ -99,9 +99,43 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
     textMesh4.position.x = 2; // Position on the right side
     scene.add(textMesh4);
 
+    // Create a glowing cube at the center
+    const glowMaterial = new THREE.ShaderMaterial({
+        vertexShader: `
+            // Vertex Shader
+            varying vec3 vNormal;
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            // Fragment Shader
+            uniform float time;
+            varying vec3 vNormal;
+            void main() {
+                float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+                vec3 glow = vec3(1.5, 1.5, 1.5) * intensity;
+                gl_FragColor = vec4(glow, 0.9 + 0.1 * sin(time));
+            }
+        `,
+        uniforms: {
+            time: { value: 0.0 }
+        },
+        transparent: true
+    });
+
+    const glowGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const glowCube = new THREE.Mesh(glowGeometry, glowMaterial);
+    scene.add(glowCube);
+
     // Render the scene
     function animate() {
         requestAnimationFrame(animate);
+        glowMaterial.uniforms.time.value += 0.05;
+        // Rotate the cube (Sebagai bukti bahwa itu cube)
+        // glowCube.rotation.x += 0.01;
+        // glowCube.rotation.y += 0.01;
         renderer.render(scene, camera);
     }
     animate();
