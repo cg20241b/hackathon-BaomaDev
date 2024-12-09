@@ -172,6 +172,24 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
     const glowCube = new THREE.Mesh(glowGeometry, glowMaterial);
     scene.add(glowCube);
 
+    // Add event listener for keydown
+    document.addEventListener('keydown', (event) => {
+        switch (event.key) {
+            case 'w':
+                glowCube.position.y += 0.1;
+                break;
+            case 's':
+                glowCube.position.y -= 0.1;
+                break;
+            case 'a':
+                camera.position.x -= 0.1;
+                break;
+            case 'd':
+                camera.position.x += 0.1;
+                break;
+        }
+    });
+
     // Render the scene
     function animate() {
         requestAnimationFrame(animate);
